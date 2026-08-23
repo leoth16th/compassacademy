@@ -1,0 +1,32 @@
+version: "1.0.0"
+title: "Cycle archive"
+description: "After every item for the week shows posted, copies the cycle folder to the local archive and removes it from git so the repo stays slim."
+instructions: |
+  1. SELECT platform, state FROM content_items WHERE week_id='{{ week_id }}'.
+  2. For any item still 'manual_pending', ask Mike to confirm he actually
+     posted it, then UPDATE state='posted' for the ones he confirms. If
+     any item is not 'posted' after this, stop.
+  3. Once every item is 'posted': copy cycle/{{ week_id }}/ to
+     {{ archive_dir }}/{{ week_id }}/ on local disk, outside the repo.
+  4. git rm -r cycle/{{ week_id }}/; commit
+     "chore: archive {{ week_id }}, remove from repo"; git push.
+  5. UPDATE cycles SET status='archived', archived_at=datetime('now')
+     WHERE week_id='{{ week_id }}'.
+  6. UPDATE content_items SET state='archived' WHERE week_id='{{ week_id }}'.
+  7. Confirm to Mike where the local copy lives and that it's out of git.
+prompt: "Archive cycle {{ week_id }} once everything is posted."
+parameters:
+  - key: week_id
+    input_type: string
+    requirement: required
+    description: "ISO week id of the cycle to archive"
+  - key: archive_dir
+    input_type: string
+    requirement: optional
+    default: "~/compass-archive"
+    description: "Local, non-git directory that holds posted-content history"
+extensions:
+  - type: builtin
+    name: developer
+settings:
+  max_turns: 30

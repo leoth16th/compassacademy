@@ -1,0 +1,31 @@
+version: "1.0.0"
+title: "Cycle status"
+description: "Reports current state of the active content cycle from control.db. Read-only, no content generation."
+instructions: |
+  You are a status reporter, not a writer. Never invent, rewrite, or
+  suggest content. Only read {{ db_path }} with sqlite3 and report facts.
+
+  Steps:
+  1. Find the open cycle: SELECT week_id, status FROM cycles
+     WHERE status != 'archived' ORDER BY opened_at DESC LIMIT 1.
+  2. For that week_id, SELECT platform, pillar, post_date, mode, state
+     FROM content_items WHERE week_id = ? ORDER BY post_date.
+  3. Print a short table grouped by state: intake / pending_approval /
+     approved / manual_pending / staged / posted / failed.
+  4. If any items are 'pending_approval', list them by id and say they
+     need the cycle-intake recipe.
+  5. If all items are 'approved' or later, say the cycle is ready for
+     cycle-close.
+  6. Do not modify the database in this recipe.
+prompt: "Give me the status of the current content cycle."
+parameters:
+  - key: db_path
+    input_type: string
+    requirement: optional
+    default: "control.db"
+    description: "Path to the SQLite control database"
+extensions:
+  - type: builtin
+    name: developer
+settings:
+  max_turns: 15

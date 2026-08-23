@@ -1,0 +1,37 @@
+version: "1.0.0"
+title: "Cycle close"
+description: "Splits approved items into manual vs automated, stages automated ones for git-based scheduled sending, and tells Mike exactly what to post by hand."
+instructions: |
+  Only act on items already in state='approved' for {{ week_id }}. Do not
+  draft or alter any content.
+
+  1. SELECT id, platform, pillar, post_date, post_time, mode, content_path
+     FROM content_items WHERE week_id='{{ week_id }}' AND state='approved'.
+  2. If any pending_approval or intake items remain for the week, stop and
+     tell Mike to finish cycle-intake first.
+  3. For mode='manual' items: UPDATE state='manual_pending'. Print a
+     checklist for Mike — platform, date, content_path — to post by hand
+     (LinkedIn, Instagram, WhatsApp saved-messages repost).
+  4. For mode='automated' items: copy each content_path into
+     cycle/{{ week_id }}/{platform}/, then write
+     cycle/{{ week_id }}/schedule.json listing id, platform, content_path,
+     post_date, post_time, and idempotency_key for every automated item.
+     UPDATE state='staged'.
+  5. git add cycle/{{ week_id }}/ control.db; commit
+     "cycle {{ week_id }}: stage automated items, manual pending listed";
+     git push.
+  6. UPDATE cycles SET status='manual_pending' WHERE week_id='{{ week_id }}'.
+  7. Report what Mike must post manually now, and confirm the automated
+     items are pushed and will be sent by the scheduled workflow even if
+     this machine is off.
+prompt: "Close cycle {{ week_id }}: split manual vs automated and stage automated items to git."
+parameters:
+  - key: week_id
+    input_type: string
+    requirement: required
+    description: "ISO week id of the cycle to close, e.g. 2026-W35"
+extensions:
+  - type: builtin
+    name: developer
+settings:
+  max_turns: 40
