@@ -34,5 +34,27 @@ jobs:
           git config user.name "compass-bot"
           git config user.email "bot@compassenglish.ir"
           git add control.db cycle/
-          git diff --quiet --cached || git commit -m "chore: mark due items posted [skip ci]"
-          git push
+          if ! git diff --quiet --cached; then
+            git commit -m "chore: mark due items posted [skip ci]"
+          fi
+
+      - name: Push commits (fail job if push fails and there were changes)
+        run: |
+          git config user.name "compass-bot"
+          git config user.email "bot@compassenglish.ir"
+          # Check if there are commits to push (compare HEAD with remote)
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            LOCAL=$(git rev-parse HEAD)
+            REMOTE=$(git rev-parse origin/main)
+            if [ "$LOCAL" != "$REMOTE" ]; then
+              echo "Local commits ahead of remote — pushing..."
+              git push
+              echo "✅ Push succeeded"
+            else
+              echo "No local commits to push (already in sync)"
+            fi
+          else
+            echo "No upstream branch — pushing to establish tracking"
+            git push -u origin main
+            echo "✅ Push succeeded"
+          fi

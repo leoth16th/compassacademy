@@ -40,6 +40,28 @@ def due_items(db_path: str, tz: str) -> list[dict]:
     return due
 
 
+def already_sent(db_path: str, idempotency_key: str) -> bool:
+    """Check if this item has already been sent (across DB copies)."""
+    con = sqlite3.connect(db_path)
+    row = con.execute(
+        "SELECT 1 FROM sent_log WHERE idempotency_key = ?",
+        (idempotency_key,)
+    ).fetchone()
+    con.close()
+    return row is not None
+
+
+def mark_sent(db_path: str, idempotency_key: str) -> None:
+    """Record that this item has been sent (idempotent - PK prevents dups)."""
+    con = sqlite3.connect(db_path)
+    con.execute(
+        "INSERT OR IGNORE INTO sent_log (idempotency_key, sent_at) VALUES (?, ?)",
+        (idempotency_key, datetime.utcnow().isoformat()),
+    )
+    con.commit()
+    con.close()
+
+
 def mark_posted(db_path: str, item_id: str) -> None:
     con = sqlite3.connect(db_path)
     con.execute(
@@ -52,13 +74,21 @@ def mark_posted(db_path: str, item_id: str) -> None:
 
 def main(tz: str, db_path: str) -> None:
     for item in due_items(db_path, tz):
+        ik = item["idempotency_key"]
+        if already_sent(db_path, ik):
+            print(f"⏭ SKIPPED duplicate (sent_log): {item['id']} -> {item['platform']}")
+            # Still mark as posted in content_items if not already
+            mark_posted(db_path, item["id"])
+            continue
+
         sender = SENDERS.get(item["platform"])
         if sender is None:
             print(f"no sender wired for platform={item['platform']}, skipping")
             continue
+
         content = Path(item["content_path"]).read_text(encoding="utf-8")
-        # idempotency_key stops a re-run from double-posting the same item
-        sender(content=content, idempotency_key=item["idempotency_key"])
+        sender(content=content, idempotency_key=ik)
+        mark_sent(db_path, ik)
         mark_posted(db_path, item["id"])
         print(f"posted {item['id']} to {item['platform']}")
 
