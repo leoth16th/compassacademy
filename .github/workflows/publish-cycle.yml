@@ -5,6 +5,9 @@ name: publish-cycle
     - cron: '*/15 * * * *'
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
