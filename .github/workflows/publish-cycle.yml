@@ -1,6 +1,6 @@
 name: publish-cycle
 
-on:
+'on':
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch: {}
