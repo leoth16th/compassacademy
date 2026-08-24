@@ -42,20 +42,5 @@ jobs:
         run: |
           git config user.name "compass-bot"
           git config user.email "bot@compassenglish.ir"
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          # Check if there are commits to push (compare HEAD with remote)
-          if git rev-parse --verify origin/$CURRENT_BRANCH >/dev/null 2>&1; then
-            LOCAL=$(git rev-parse HEAD)
-            REMOTE=$(git rev-parse origin/$CURRENT_BRANCH)
-            if [ "$LOCAL" != "$REMOTE" ]; then
-              echo "Local commits ahead of remote — pushing..."
-              git push
-              echo "✅ Push succeeded"
-            else
-              echo "No local commits to push (already in sync)"
-            fi
-          else
-            echo "No upstream branch — pushing to establish tracking"
-            git push -u origin $CURRENT_BRANCH
-            echo "✅ Push succeeded"
-          fi
+          # Test: Force push to nonexistent branch to trigger failure
+          git push origin nonexistent-branch
