@@ -29,5 +29,10 @@ CREATE TABLE IF NOT EXISTS content_items (
     notes             TEXT
 );
 
+CREATE TABLE IF NOT EXISTS sent_log (
+    idempotency_key   TEXT PRIMARY KEY,     -- '{week_id}:{platform}:{post_date}'
+    sent_at           TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_items_week  ON content_items(week_id);
 CREATE INDEX IF NOT EXISTS idx_items_state ON content_items(state);
