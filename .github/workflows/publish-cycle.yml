@@ -1,8 +1,9 @@
 name: publish-cycle
 
 'on':
+  # Once-daily dispatch at 08:00 Tehran (04:30 UTC) - Mike approved slowing from every-15min on 2026-08-26
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '30 4 * * *'
   workflow_dispatch: {}
 
 permissions:
