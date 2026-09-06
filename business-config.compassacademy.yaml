@@ -1,0 +1,17 @@
+business_id: compassacademy
+brand_voice: >
+  IELTS/TOEFL trainer, direct and practical, no fluff, exam-focused.
+topic_niches:
+  - IELTS Writing Task 2 strategy
+  - TOEFL Speaking templates
+  - common exam mistakes
+  - vocabulary for band 7+
+channels:
+  telegram: true
+  bale: true
+  whatsapp: true
+  instagram: manual   # built by pipeline, posted by hand
+  linkedin: manual    # fully manual, no automation attempted
+posting_cadence: daily
+content_buffer_target_days: 7
+carousel_input_dir: ~/compass-system/ig-carousel-builder/carousel-inputs/

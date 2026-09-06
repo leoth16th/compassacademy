@@ -1,0 +1,36 @@
+version: 1.0.0
+title: log
+description: >
+  Writes one structured control.db row per run. Never prose. Rolls old runs
+  into a short dated summary instead of letting a log file grow forever.
+
+settings:
+  goose_provider: custom_openrouter6
+  goose_model: high-copy
+
+extensions:
+  - type: builtin
+    name: developer
+    display_name: Developer Tools
+
+parameters:
+  - key: run_summary
+    input_type: string
+    requirement: required
+    description: >
+      JSON string: { draft_file_path, qc_pass, qc_retries, post_status, timestamp }
+
+instructions: |
+  Parse {{ run_summary }} as JSON. Insert it as one row in control.db's runs
+  table. Fields only — no narrative text field.
+
+  If the runs table has grown past a reasonable size (check row count),
+  roll rows older than 30 days into a single dated summary row per week
+  and delete the individual rows they came from. Do this in batches, not
+  one row at a time.
+
+  Return ONLY:
+  { "status": "ok" | "error", "detail": "..." }
+
+prompt: |
+  Log this run: {{ run_summary }}

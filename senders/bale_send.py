@@ -9,6 +9,12 @@ import urllib.request
 import urllib.error
 import urllib.parse
 import pathlib
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env from repo root
+REPO_ROOT = Path(__file__).parent.parent
+load_dotenv(str(REPO_ROOT / ".env"))
 
 BALE_API = "https://tapi.bale.ai"
 

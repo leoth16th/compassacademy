@@ -1,0 +1,135 @@
+version: 1.0.0
+title: pick-idea
+description: >
+  Picks one unused row from raw_material.db for content creation, marks it
+  used, and prints the full row. Pure logic — no LLM judgment. Cross-checks
+  each candidate's topic against posted-log.json to skip recently posted
+  mistake types, then returns the first row that passes both filters.
+
+settings:
+  goose_provider: custom_openrouter6
+  goose_model: high-copy
+
+extensions:
+  - type: builtin
+    name: developer
+    display_name: Developer Tools
+
+parameters:
+  - key: pillar
+    input_type: string
+    requirement: optional
+    default: ""
+    description: >
+      Optional pillar filter (diagnostic_markup / collocation /
+      surgical_diagnostic). If given, prefer rows whose pillar matches;
+      if not given or no matching unused row exists, fall back to any
+      unused row.
+
+instructions: |
+  Use shell tool only. No scripting workarounds.
+
+  Run this single Python script and paste its full output verbatim:
+
+  cd /home/mike/compass-system
+  python3 << 'PYEOF'
+  import sqlite3, json, sys
+
+  DB = "/home/mike/compass-system/raw_material.db"
+  LOG = "/home/mike/compass-system/compassacademy/bank/openclaw-autoclaw/workspace/posted-log.json"
+  PILLAR = "{{ pillar }}".strip()
+
+  # 1. Load recent posted topics (case-insensitive substring match on
+  #    mistake_type; also match on pillar+topic combos already posted).
+  try:
+      with open(LOG, "r", encoding="utf-8-sig") as f:
+          posted = json.load(f)
+  except Exception:
+      posted = []
+  posted_lower = [str(x).lower() for x in posted]
+
+  conn = sqlite3.connect(DB)
+  conn.row_factory = sqlite3.Row
+  cur = conn.cursor()
+
+  total = cur.execute("SELECT COUNT(*) FROM raw_material").fetchone()[0]
+  unused_total = cur.execute("SELECT COUNT(*) FROM raw_material WHERE used=0").fetchone()[0]
+
+  # 2. Candidate pool: used=0, pillar filter if given.
+  if PILLAR:
+      rows = cur.execute(
+          "SELECT * FROM raw_material WHERE used=0 AND pillar=? ORDER BY id",
+          (PILLAR,)
+      ).fetchall()
+  else:
+      rows = cur.execute(
+          "SELECT * FROM raw_material WHERE used=0 ORDER BY id"
+      ).fetchall()
+
+  # 3. Cross-check against posted-log: skip rows whose mistake_type (or
+  #    pillar+mistake_type combo) clearly overlaps a recent log entry.
+  picked = None
+  for r in rows:
+      topic = (r["mistake_type"] or "").lower()
+      combo = f"{r['pillar']} {topic}".lower()
+      blocked = any(topic and (topic in p or p in topic) for p in posted_lower)
+      if not blocked:
+          picked = r
+          break
+
+  # 4. Fallback: if pillar filter yielded nothing that passes, try any
+  #    unused row (ignoring pillar) that passes the overlap check.
+  if picked is None and PILLAR:
+      all_unused = cur.execute(
+          "SELECT * FROM raw_material WHERE used=0 ORDER BY id"
+      ).fetchall()
+      for r in all_unused:
+          topic = (r["mistake_type"] or "").lower()
+          blocked = any(topic and (topic in p or p in topic) for p in posted_lower)
+          if not blocked:
+              picked = r
+              break
+
+  if picked is None:
+      print(json.dumps({
+          "status": "error",
+          "detail": "No unused row passes the posted-log overlap filter.",
+          "total_rows": total,
+          "rows_unused": unused_total,
+          "pillar_filter": PILLAR,
+      }, ensure_ascii=False, indent=2))
+      conn.close()
+      sys.exit(0)
+
+  # 5. Mark used.
+  cur.execute("UPDATE raw_material SET used=1 WHERE id=?", (picked["id"],))
+  conn.commit()
+
+  remaining = cur.execute("SELECT COUNT(*) FROM raw_material WHERE used=0").fetchone()[0]
+
+  print(json.dumps({
+      "status": "ok",
+      "picked": {
+          "id": picked["id"],
+          "pillar": picked["pillar"],
+          "mistake_type": picked["mistake_type"],
+          "example_wrong": picked["example_wrong"],
+          "example_correct": picked["example_correct"],
+          "explanation": picked["explanation"],
+          "source_file": picked["source_file"],
+      },
+      "total_rows": total,
+      "rows_remaining_unused": remaining,
+      "pillar_filter": PILLAR,
+  }, ensure_ascii=False, indent=2))
+
+  conn.close()
+  PYEOF
+
+  Paste real output verbatim. Record "failed" on error and continue.
+
+return: |
+  {"status": "ok" | "error", "detail": "...", "picked": {...}, "total_rows": N, "rows_remaining_unused": N}
+
+prompt: |
+  Pick an idea{{ " for pillar " + pillar if pillar else "" }} and mark it used.

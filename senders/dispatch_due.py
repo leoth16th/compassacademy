@@ -87,10 +87,14 @@ def main(tz: str, db_path: str) -> None:
             continue
 
         content = Path(item["content_path"]).read_text(encoding="utf-8")
-        sender(content=content, idempotency_key=ik)
-        mark_sent(db_path, ik)
-        mark_posted(db_path, item["id"])
-        print(f"posted {item['id']} to {item['platform']}")
+        try:
+            sender(content=content, idempotency_key=ik)
+            mark_sent(db_path, ik)
+            mark_posted(db_path, item["id"])
+            print(f"✓ posted {item['id']} to {item['platform']}")
+        except Exception as e:
+            print(f"✗ FAILED to post {item['id']} to {item['platform']}: {e}")
+            raise
 
 
 if __name__ == "__main__":

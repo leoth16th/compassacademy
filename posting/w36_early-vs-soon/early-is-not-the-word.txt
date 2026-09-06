@@ -1,0 +1,43 @@
+handle: compassenglish
+bgColor: #1a1a1a
+textColor: #ffffff
+Slide 1:
+Badge: SLIDE 1
+Title: "Early" is not the word you think it is
+Content: یه جملهی بهظاهر ساده که خیلیا تو ایمیل رسمی اشتباه مینویسن:
+❌ I hope to hear from you early.
+به نظر درست میاد، ولی تو انگلیسیِ رسمی این کلمه اونجا جا نمیفته.
+Highlight: یه کلمهی اشتباه، کل تُنِ ایمیلت رو عوض میکنه
+Slide 2:
+Badge: WHY IT FAILS
+Title: "Early" یعنی زودتر از یه زمان مشخص
+Content: "Early" به این معنیه که نسبت به یه ساعت یا موعد خاص، جلوتره.
+مثلاً: "She arrived early" (زودتر از ساعت قرارش رسید)
+ولی وقتی داری منتظر جواب یه ایمیل میمونی، هیچ "زمان مشخصی" وجود نداره که بخوای زودتر از اون باشی.
+Highlight: Early بدون یه نقطهی مرجع، معنی نداره
+Slide 3:
+Badge: THE FIX
+Title: "Soon" همون کلمهایه که دنبالشی
+Content: ✅ I hope to hear from you soon.
+"Soon" یعنی «بهزودی، بدون فاصلهی زیاد» — دقیقاً همون حسی که تو جملهی پایانیِ ایمیل رسمی نیاز داری.
+Highlight: Soon = به زودی، بدون نیاز به نقطهی مرجع
+Slide 4:
+Badge: SIDE BY SIDE
+Title: مقایسهی دو نسخه
+Content: ❌ I hope to hear from you early.
+✅ I hope to hear from you soon.
+فرقشون تو معنا نیست، تو طبیعی بودنه. نسخهی دوم چیزیه که یه native speaker مینویسه.
+Highlight: 
+Slide 5:
+Badge: REMEMBER
+Title: قانون سریع
+Content: هر جا خواستی بگی «به زودی» بدون اشاره به یه ساعت یا تاریخ خاص → soon
+هر جا یه نقطهی مرجع مشخص داری (قبل از یه ساعت، قبل از یه نفر) → early
+این جملهی آخر ایمیله، پس نقطهی مرجعی وجود نداره.
+Highlight: Soon برای پایانبندی ایمیل، Early برای مقایسه با یه زمان مشخص
+Slide 6:
+Badge: SLIDE 6
+Title: آمادهای امتحانش کنی؟
+Content: دفعهی بعد که ایمیل رسمی مینویسی، این جمله رو با soon تموم کن، نه early.
+یه تغییر کوچیک، یه تفاوت بزرگ تو حس حرفهای بودن نوشتهت.
+Highlight: برای مشاوره رایگان پیام بده 👇

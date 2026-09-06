@@ -1,0 +1,61 @@
+version: 1.0.0
+title: post
+description: >
+  Sends QC-approved carousel content to Telegram and Bale via existing sender
+  scripts. Flags Instagram and LinkedIn as pending_manual in control.db.
+
+settings:
+  goose_provider: custom_openrouter6
+  goose_model: high-copy
+
+extensions:
+  - type: builtin
+    name: developer
+    display_name: Developer Tools
+
+parameters:
+  - key: carousel_json_path
+    input_type: string
+    requirement: optional
+    default: /home/mike/compass-system/ig-carousel-builder/renders/latest.txt
+    description: Path to the QC-approved carousel render file.
+
+instructions: |
+  Use shell tool only. No scripting workarounds.
+
+  Step 1 — read carousel content:
+    cat {{ carousel_json_path }}
+
+  Step 2 — send Telegram:
+    cd /home/mike/compass-system/compassacademy/senders
+    python3 << 'PYEOF'
+    import sys; sys.path.insert(0, '.')
+    import telegram_send
+    content = open('{{ carousel_json_path }}').read()
+    telegram_send.send(content, idempotency_key='{{ carousel_json_path }}')
+    print('telegram: sent')
+    PYEOF
+    Paste real output. Record "failed" on error and continue.
+
+  Step 3 — send Bale:
+    cd /home/mike/compass-system/compassacademy/senders
+    python3 << 'PYEOF'
+    import sys; sys.path.insert(0, '.')
+    import bale_send
+    content = open('{{ carousel_json_path }}').read()
+    bale_send.send(content, idempotency_key='{{ carousel_json_path }}')
+    print('bale: sent')
+    PYEOF
+    Paste real output.
+
+  Step 4 — flag Instagram pending:
+    sqlite3 /home/mike/compass-system/compassacademy/control.db "INSERT INTO sent_log (channel, content_path, status, sent_at) VALUES ('instagram', '{{ carousel_json_path }}', 'pending_manual', datetime('now'));"
+
+  Step 5 — flag LinkedIn pending (permanently manual — API blocked in Iran):
+    sqlite3 /home/mike/compass-system/compassacademy/control.db "INSERT INTO sent_log (channel, content_path, status, sent_at) VALUES ('linkedin', '{{ carousel_json_path }}', 'pending_manual', datetime('now'));"
+
+  Return ONLY valid JSON:
+  {"status": "ok or partial or error", "channels": {"telegram": "sent or failed", "bale": "sent or failed", "instagram": "pending_manual", "linkedin": "pending_manual"}, "detail": "errors if any"}
+
+prompt: |
+  Post the approved content at {{ carousel_json_path }}.
