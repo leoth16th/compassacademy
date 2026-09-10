@@ -74,17 +74,21 @@ def send_photo(image_path, caption=None):
     return api_post("sendPhoto", data, files={"photo": image_path})
 
 
-def send(content: str, idempotency_key: str) -> None:
+def send(content: str, idempotency_key: str, image_path: str = None) -> None:
     """Main interface expected by dispatch_due.py"""
     if not TOKEN or len(TOKEN) < 20:
         raise RuntimeError("BALE_BOT_TOKEN not set or too short")
     if not CHAT_ID:
         raise RuntimeError("BALE_CHAT_ID not set")
 
-    # Check if content references an image (simple heuristic: starts with IMAGE: or similar)
-    # For now, send as text. Image support can be added if needed.
-    result = send_text(content)
+    if image_path:
+        result = send_photo(image_path, caption=content)
+        if not result.get("ok"):
+            raise RuntimeError(f"Bale sendPhoto failed: {result.get('description', result)}")
+        print(f"OK - sent photo+caption to Bale (idempotency: {idempotency_key})")
+        return
 
+    result = send_text(content)
     if not result.get("ok"):
         raise RuntimeError(f"Bale send failed: {result.get('description', result)}")
 
@@ -92,10 +96,15 @@ def send(content: str, idempotency_key: str) -> None:
 
 
 if __name__ == "__main__":
-    # Allow direct CLI usage for testing
     import sys
     if len(sys.argv) < 2:
         print("Usage: python bale_send.py 'message text'")
+        print("       python bale_send.py --photo /path/to/img.png 'caption text'")
         sys.exit(1)
-    text = " ".join(sys.argv[1:])
-    send(text, idempotency_key=f"cli-{os.urandom(4).hex()}")
+    if sys.argv[1] == "--photo":
+        img = sys.argv[2]
+        caption = " ".join(sys.argv[3:]) if len(sys.argv) > 3 else None
+        send(caption or "", idempotency_key=f"cli-{os.urandom(4).hex()}", image_path=img)
+    else:
+        text = " ".join(sys.argv[1:])
+        send(text, idempotency_key=f"cli-{os.urandom(4).hex()}")
