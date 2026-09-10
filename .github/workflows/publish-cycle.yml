@@ -60,4 +60,3 @@ jobs:
             git push -u origin $CURRENT_BRANCH
             echo "✅ Push succeeded"
           fi
-// force re-detect Sun Sep  6 12:07:36 +0330 2026

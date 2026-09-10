@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 Telegram sender - Real implementation ported from AutoClaw.
-Expected interface: send(content: str, idempotency_key: str) -> None
+Expected interface: send(content: str, idempotency_key: str, image_path: str = None) -> None
 """
 import os
 import json
+import pathlib
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -45,7 +46,7 @@ def api_call(token: str, method: str, data: dict = None) -> dict:
         )
     else:
         req = urllib.request.Request(url)
-    
+
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             return json.loads(resp.read().decode())
@@ -54,10 +55,57 @@ def api_call(token: str, method: str, data: dict = None) -> dict:
         return {"ok": False, "error_code": e.code, "description": body}
 
 
-def send(content: str, idempotency_key: str) -> None:
+def api_post_multipart(token: str, method: str, data: dict, files: dict) -> dict:
+    url = api_url(token, method)
+    boundary = "----TelegramSenderBoundary"
+    body = bytearray()
+    for key, val in data.items():
+        body.extend(f"--{boundary}\r\n".encode())
+        body.extend(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
+        body.extend(f"{val}\r\n".encode())
+    for field_name, filepath in files.items():
+        filename = pathlib.Path(filepath).name
+        body.extend(f"--{boundary}\r\n".encode())
+        body.extend(f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\n'.encode())
+        body.extend(b"Content-Type: application/octet-stream\r\n\r\n")
+        body.extend(pathlib.Path(filepath).read_bytes())
+        body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode())
+    req = urllib.request.Request(
+        url,
+        data=bytes(body),
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body_err = e.read().decode(errors="replace")
+        return {"ok": False, "error_code": e.code, "description": body_err}
+
+
+def send_photo(image_path: str, caption: str = None) -> dict:
+    """Send a photo with optional caption via sendPhoto."""
+    token = get_active_token()
+    data = {"chat_id": TELEGRAM_CHAT_ID}
+    if caption:
+        data["caption"] = caption
+        data["parse_mode"] = "HTML"
+    result = api_post_multipart(token, "sendPhoto", data, files={"photo": image_path})
+    if not result.get("ok"):
+        raise RuntimeError(f"Telegram sendPhoto failed: {result.get('description', result)}")
+    return result
+
+
+def send(content: str, idempotency_key: str, image_path: str = None) -> None:
     """Main interface expected by dispatch_due.py"""
     token = get_active_token()
-    
+
+    if image_path:
+        send_photo(image_path, caption=content)
+        print(f"OK - sent photo+caption to Telegram (idempotency: {idempotency_key})")
+        return
+
     result = api_call(token, "sendMessage", {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": content,
@@ -96,19 +144,24 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python telegram_send.py 'message text'")
         print("       python telegram_send.py --verify")
+        print("       python telegram_send.py --photo /path/to/img.png 'caption text'")
         sys.exit(1)
-    
+
     if sys.argv[1] == "--verify":
         token = get_active_token()
         print("Verifying bot...")
         bot_info = verify_bot(token)
         print(f"Bot: @{bot_info['result']['username']} (id {bot_info['result']['id']})")
-        
+
         print("Verifying chat access...")
         chat_info = verify_chat(token)
         print(f"Chat: {chat_info['chat'].get('title')} (id {chat_info['chat'].get('id')})")
         print(f"Member status: {chat_info['member_status']}")
         print(f"Permissions: {chat_info['permissions']}")
+    elif sys.argv[1] == "--photo":
+        img = sys.argv[2]
+        caption = " ".join(sys.argv[3:]) if len(sys.argv) > 3 else None
+        send(caption or "", idempotency_key=f"cli-{os.urandom(4).hex()}", image_path=img)
     else:
         text = " ".join(sys.argv[1:])
         send(text, idempotency_key=f"cli-{os.urandom(4).hex()}")
