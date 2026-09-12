@@ -5,6 +5,7 @@ before moving on, shows a final summary, asks for confirmation, then stages
 the post. No flags to remember. Always posts to BOTH telegram and bale.
 Text is pasted directly. Image is found by filename in ~/Downloads.
 """
+import json
 import subprocess
 import sys
 import tempfile
@@ -13,6 +14,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 STAGE_POST = SCRIPT_DIR / "stage_post.py"
+PICK_IDEA = SCRIPT_DIR / "pick_idea.py"
 DOWNLOADS = Path.home() / "Downloads"
 
 
@@ -49,6 +51,21 @@ def get_multiline_text() -> str:
     return "\n".join(lines).strip()
 
 
+def get_idea(pillar: str):
+    """Call pick_idea.py, return parsed JSON dict or None on failure."""
+    cmd = [sys.executable, str(PICK_IDEA)]
+    if pillar:
+        cmd.append(pillar)
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        data = json.loads(result.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    if data.get("status") != "ok":
+        return None
+    return data["picked"]
+
+
 def main():
     print("=== Compass: stage a post (goes to BOTH Telegram and Bale) ===\n")
 
@@ -60,10 +77,35 @@ def main():
             break
         print(f"  -> {err}")
 
+    pillar_for_idea = input("\nPillar for today's idea (collocation / markup / diagnostic / blank = any): ").strip()
+    idea = get_idea(pillar_for_idea)
+    if idea:
+        print("\n--- Today's idea (already marked used) ---")
+        print(f"id       : {idea['id']}")
+        print(f"pillar   : {idea['pillar']}")
+        print(f"wrong    : {idea['example_wrong']}")
+        print(f"correct  : {idea['example_correct']}")
+        print(f"why      : {idea['explanation']}")
+        print("-------------------------------------------")
+        print("Copy this into your web AI to draft the post. Paste the AI's reply below when ready.\n")
+    else:
+        print("\n  -> no unused idea found (or pick_idea.py failed) — draft freely.\n")
+
     text = get_multiline_text()
     while not text:
         print("  -> text can't be empty")
         text = get_multiline_text()
+
+    open_carousel = input("\nOpen the carousel builder now (for IG/LinkedIn slides)? (y/n) [n]: ").strip().lower()
+    if open_carousel == "y":
+        carousel_sh = SCRIPT_DIR.parent.parent / "ig-carousel-builder" / "run-carousel.sh"
+        if carousel_sh.is_file():
+            subprocess.Popen(["bash", str(carousel_sh)],
+                              cwd=str(carousel_sh.parent),
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("  -> launching builder at http://localhost:4000 (opens in browser)")
+        else:
+            print(f"  -> not found: {carousel_sh}")
 
     image_path = None
     has_image = input("\nDoes this post have a photo? (y/n) [y]: ").strip().lower()
