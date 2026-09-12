@@ -96,16 +96,36 @@ def main():
         print("  -> text can't be empty")
         text = get_multiline_text()
 
-    open_carousel = input("\nOpen the carousel builder now (for IG/LinkedIn slides)? (y/n) [n]: ").strip().lower()
+    open_carousel = input("\nOpen carousel builder + Instagram + ChatGPT + Claude now? (y/n) [n]: ").strip().lower()
     if open_carousel == "y":
         carousel_sh = SCRIPT_DIR.parent.parent / "ig-carousel-builder" / "run-carousel.sh"
         if carousel_sh.is_file():
             subprocess.Popen(["bash", str(carousel_sh)],
                               cwd=str(carousel_sh.parent),
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print("  -> launching builder at http://localhost:4000 (opens in browser)")
+            print("  -> launching builder at http://localhost:4000")
         else:
             print(f"  -> not found: {carousel_sh}")
+
+        # Profile 3 = mycompassenglishacademy@gmail.com (Compass)
+        # Profile 1 = leo16th1989@gmail.com (Leo)
+        subprocess.Popen(
+            ["google-chrome", "--profile-directory=Profile 3", "https://www.instagram.com/"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        print("  -> opening Instagram in Chrome (Compass profile)")
+
+        subprocess.Popen(
+            ["google-chrome", "--profile-directory=Profile 1", "https://chat.openai.com/"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        print("  -> opening ChatGPT in Chrome (Leo profile)")
+
+        subprocess.Popen(
+            ["google-chrome", "--profile-directory=Profile 1", "https://claude.ai/"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        print("  -> opening Claude in Chrome (Leo profile)")
 
     image_path = None
     has_image = input("\nDoes this post have a photo? (y/n) [y]: ").strip().lower()
