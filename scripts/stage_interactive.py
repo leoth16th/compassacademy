@@ -87,14 +87,9 @@ def main():
         print(f"correct  : {idea['example_correct']}")
         print(f"why      : {idea['explanation']}")
         print("-------------------------------------------")
-        print("Copy this into your web AI to draft the post. Paste the AI's reply below when ready.\n")
+        print("Copy this into your web AI to draft the post.\n")
     else:
         print("\n  -> no unused idea found (or pick_idea.py failed) — draft freely.\n")
-
-    text = get_multiline_text()
-    while not text:
-        print("  -> text can't be empty")
-        text = get_multiline_text()
 
     open_carousel = input("\nOpen carousel builder + Instagram + ChatGPT + Claude now? (y/n) [n]: ").strip().lower()
     if open_carousel == "y":
@@ -126,6 +121,11 @@ def main():
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
         print("  -> opening Claude in Chrome (Leo profile)")
+
+    text = get_multiline_text()
+    while not text:
+        print("  -> text can't be empty")
+        text = get_multiline_text()
 
     image_path = None
     has_image = input("\nDoes this post have a photo? (y/n) [y]: ").strip().lower()
