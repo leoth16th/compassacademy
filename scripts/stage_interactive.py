@@ -77,15 +77,20 @@ def main():
             break
         print(f"  -> {err}")
 
-    pillar_for_idea = input("\nPillar for today's idea (collocation / markup / diagnostic / blank = any): ").strip()
+    pillar_for_idea = input("\nPillar for today's idea (saturday=test_info / monday=collocation / wednesday=student_mistake / blank = any): ").strip()
     idea = get_idea(pillar_for_idea)
     if idea:
         print("\n--- Today's idea (already marked used) ---")
         print(f"id       : {idea['id']}")
         print(f"pillar   : {idea['pillar']}")
-        print(f"wrong    : {idea['example_wrong']}")
-        print(f"correct  : {idea['example_correct']}")
-        print(f"why      : {idea['explanation']}")
+        if idea.get("ready_made_content"):
+            print(f"source   : {idea['ready_made_path']}")
+            print("-------------------------------------------")
+            print(idea["ready_made_content"])
+        else:
+            print(f"wrong    : {idea['example_wrong']}")
+            print(f"correct  : {idea['example_correct']}")
+            print(f"why      : {idea['explanation']}")
         print("-------------------------------------------")
         print("Copy this into your web AI to draft the post.\n")
     else:
@@ -146,7 +151,7 @@ def main():
                 break
             print(f"  -> no match in ~/Downloads for '{frag}', and not a direct path either")
 
-    pillar = input("\nPillar (collocation / markup / diagnostic / leave blank): ").strip()
+    pillar = input("\nPillar (test_info / collocation / student_mistake / leave blank): ").strip()
 
     # write text to a temp file for stage_post.py
     tmp_text = Path(tempfile.mkstemp(suffix=".txt")[1])
