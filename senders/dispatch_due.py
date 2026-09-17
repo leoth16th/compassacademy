@@ -21,6 +21,24 @@ SENDERS = {
     "bale": bale_send.send,
 }
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def resolve_path(stored_path: str) -> Path:
+    """content_path/image_path in the DB may be an absolute path baked in
+    from Mike's machine (/home/mike/compass-system/compassacademy/...).
+    On GitHub Actions the repo lives at a different absolute path, so that
+    breaks. Re-anchor anything under a 'compassacademy/' segment to this
+    repo's actual root; otherwise use the path as-is (already relative)."""
+    p = Path(stored_path)
+    if p.is_absolute():
+        parts = p.parts
+        if "compassacademy" in parts:
+            idx = parts.index("compassacademy")
+            rel_parts = parts[idx + 1:]
+            return REPO_ROOT.joinpath(*rel_parts)
+    return REPO_ROOT / p if not p.is_absolute() else p
+
 
 def due_items(db_path: str, tz: str) -> list[dict]:
     now = datetime.now(ZoneInfo(tz))
@@ -86,8 +104,9 @@ def main(tz: str, db_path: str) -> None:
             print(f"no sender wired for platform={item['platform']}, skipping")
             continue
 
-        content = Path(item["content_path"]).read_text(encoding="utf-8")
-        image_path = item["image_path"] if "image_path" in item.keys() else None
+        content = resolve_path(item["content_path"]).read_text(encoding="utf-8")
+        raw_image_path = item["image_path"] if "image_path" in item.keys() else None
+        image_path = str(resolve_path(raw_image_path)) if raw_image_path else None
         try:
             if image_path:
                 sender(content=content, idempotency_key=ik, image_path=image_path)
