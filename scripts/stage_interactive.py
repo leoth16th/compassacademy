@@ -164,11 +164,6 @@ def main():
     print(f"Pillar   : {pillar or '(none)'}")
     print("-----------------------------------------\n")
 
-    confirm = input("Confirm and stage this? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Cancelled. Nothing staged.")
-        sys.exit(0)
-
     any_fail = False
     for platform in ("telegram", "bale"):
         cmd = [
@@ -194,11 +189,6 @@ def main():
         sys.exit(1)
 
     print("Staged successfully for both platforms.\n")
-
-    push_now = input("Push to GitHub now so it actually sends? (y/n) [y]: ").strip().lower()
-    if push_now == "n":
-        print("Not pushed. Nothing will send until you run: ./daily.sh push")
-        sys.exit(0)
 
     push_result = subprocess.run(
         [str(SCRIPT_DIR / "daily.sh"), "push"],
