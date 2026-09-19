@@ -1,16 +1,19 @@
 name: publish-cycle
 
 'on':
-  # Dispatch at 04:30, 05:00, 05:30 UTC (08:00/08:30/09:00 Tehran) - GHA cron
-  # is best-effort and silently skipped the 2026-09-19 run entirely, so one
-  # shot/day isn't reliable. 3 tries within 1hr of the intended 08:00 Tehran
-  # slot as a safety net; dispatch_due.py only sends items whose scheduled
-  # time has passed and are still state=staged, so re-running is a safe
-  # no-op once the real send has already gone through.
+  # Once-daily dispatch at ~08:07 Tehran (04:37 UTC). GHA's scheduler
+  # silently skipped the 2026-09-19 run entirely (confirmed via gh run
+  # list: zero runs that day, no error). Tried 3x/hour as a safety net on
+  # 2026-09-19 but that's wasteful (extra GHA minutes + carbon for no real
+  # benefit) and Mike vetoed it - going back to once/day. Using :37 instead
+  # of :30 since GHA's scheduler queues/drops more often at the exact
+  # top/bottom of the hour when every other repo on Earth also fires then;
+  # off-beat minutes are documented to be more reliable. If a run is still
+  # silently skipped, see MUST_READ notes / revisit an external cron
+  # trigger (cPanel host has cron but no SSH/Python - would need a tiny
+  # PHP webhook-ping script, deferred until we see how this performs).
   schedule:
-    - cron: '30 4 * * *'
-    - cron: '0 5 * * *'
-    - cron: '30 5 * * *'
+    - cron: '37 4 * * *'
   workflow_dispatch: {}
 
 permissions:
