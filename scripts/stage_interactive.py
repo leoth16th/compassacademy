@@ -77,7 +77,7 @@ def main():
             break
         print(f"  -> {err}")
 
-    pillar_for_idea = input("\nPillar for today's idea (saturday=test_info / monday=collocation / wednesday=student_mistake / blank = any): ").strip()
+    pillar_for_idea = input("\nPillar for today's idea (saturday=entertainment / monday=collocation / wednesday=student_mistake / blank = any): ").strip()
     idea = get_idea(pillar_for_idea)
     if idea:
         print("\n--- Today's idea (already marked used) ---")
@@ -151,7 +151,8 @@ def main():
                 break
             print(f"  -> no match in ~/Downloads for '{frag}', and not a direct path either")
 
-    pillar = input("\nPillar (test_info / collocation / student_mistake / leave blank): ").strip()
+    pillar = input("\nPillar (entertainment / collocation / student_mistake / test_info / leave blank): ").strip()
+    pillar = {"saturday": "entertainment", "monday": "collocation", "wednesday": "student_mistake"}.get(pillar.lower(), pillar)
 
     # write text to a temp file for stage_post.py
     tmp_text = Path(tempfile.mkstemp(suffix=".txt")[1])

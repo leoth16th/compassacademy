@@ -3,13 +3,15 @@
 Pure logic idea-picker. No LLM. No agent. Extracted from recipes/pick-idea.yaml
 so it runs standalone with zero Goose/agent overhead.
 
-Pillars: test_info (Saturday, TOEFL/IELTS exam-info posts) / collocation
-(Monday) / student_mistake (Wednesday, real student errors).
+Pillars: entertainment (Saturday: songs / news / entertainment - no DB rows,
+Mike brings his own topic) / collocation (Monday) / student_mistake
+(Wednesday, real student errors). test_info = old exam-info carousels, still
+in the bank, reachable only by typing test_info.
 
 Usage:
   python3 pick_idea.py                  # any unused idea
   python3 pick_idea.py collocation      # unused idea for this pillar, fallback any
-  python3 pick_idea.py saturday         # same as test_info
+  python3 pick_idea.py saturday         # same as entertainment
 """
 import sqlite3
 import json
@@ -19,7 +21,7 @@ from pathlib import Path
 DB = "/home/mike/compass-system/raw_material.db"
 
 DAY_ALIASES = {
-    "saturday": "test_info",
+    "saturday": "entertainment",
     "monday": "collocation",
     "wednesday": "student_mistake",
     # accept the old names too, in case something still passes them
@@ -48,7 +50,9 @@ def main() -> None:
             (pillar,)
         ).fetchone()
 
-    if picked is None:
+    # entertainment has no DB ideas on purpose: never fall back to another
+    # pillar, or a Saturday run would silently burn a collocation/mistake idea.
+    if picked is None and pillar != "entertainment":
         picked = cur.execute(
             "SELECT * FROM raw_material WHERE used=0 ORDER BY id LIMIT 1"
         ).fetchone()
@@ -56,7 +60,8 @@ def main() -> None:
     if picked is None:
         print(json.dumps({
             "status": "error",
-            "detail": "No unused rows left in raw_material.db.",
+            "detail": ("Saturday = entertainment has no DB ideas by design - bring your own topic."
+                   if pillar == "entertainment" else "No unused rows left in raw_material.db."),
             "total_rows": total,
             "rows_unused": unused_total,
             "pillar_filter": pillar,

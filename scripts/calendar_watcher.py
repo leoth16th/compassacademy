@@ -26,8 +26,8 @@ load_dotenv(str(Path(REPO) / ".env"))
 DB_PATH = os.path.join(REPO, "control.db")
 
 # ISO weekday: Mon=0 ... Sun=6. Locked pillars:
-# Saturday=5 -> test_info | Monday=0 -> collocation | Wednesday=2 -> student_mistake
-SLOTS = [(0, "collocation"), (2, "student_mistake"), (5, "test_info")]
+# Saturday=5 -> entertainment | Monday=0 -> collocation | Wednesday=2 -> student_mistake
+SLOTS = [(0, "collocation"), (2, "student_mistake"), (5, "entertainment")]
 
 
 def iso_week_id(d: date) -> str:
